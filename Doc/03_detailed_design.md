@@ -19,22 +19,24 @@ GAS × スプレッドシート Web予約システム（自動車整備工場向
 ---
 
 ## 1. 全体アーキテクチャ
+```text
 [Web予約フォーム]
-|
-v
+        |
+        v
 [GAS Web Apps] ----+
-|
+        |
 [管理者UI（電話予約）]
-|
-v
+        |
+        v
 [共通予約登録ロジック]
-|
-+---------+----------+
-| |
-[予約台帳 Spreadsheet] [Googleカレンダー]
-|
-v
+        |
+  +-----+-----------+
+  |                 |
+[予約台帳 Spreadsheet]   [Googleカレンダー]
+        |
+        v
 [管理者通知メール]
+```
 
 
 - 正のデータ：予約台帳（Spreadsheet）
@@ -129,6 +131,7 @@ v
 ## 3. GAS構成設計
 
 ### 3.1 ファイル構成（推奨）
+```text
 src/
 ├─ main.gs
 ├─ reservationService.gs
@@ -140,8 +143,9 @@ src/
 ├─ validator.gs
 ├─ errorHandler.gs
 └─ ui/
-├─ web_form.html
-└─ phone_form.html
+   ├─ web_form.html
+   └─ phone_form.html
+```
 
 
 ---
@@ -240,4 +244,3 @@ Web予約／電話予約共通の予約登録処理。
 - GAS実装
 - 簡易テスト
 - README作成
-
