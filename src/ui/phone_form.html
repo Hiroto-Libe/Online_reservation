@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>電話予約</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 24px; }
+      label { display: block; margin-top: 12px; }
+      input, select, textarea { width: 100%; max-width: 420px; padding: 8px; }
+      button { margin-top: 16px; padding: 10px 16px; }
+    </style>
+  </head>
+  <body>
+    <h1>電話予約</h1>
+    <form method="post">
+      <input type="hidden" name="reservation_type" value="PHONE">
+
+      <label>メニュー
+        <select name="menu_code" required>
+          <? for (var i = 0; i < menus.length; i++) { ?>
+            <option value="<?= menus[i].menu_code ?>"><?= menus[i].menu_label ?></option>
+          <? } ?>
+        </select>
+      </label>
+
+      <label>予約日時
+        <input type="datetime-local" name="start_at" required>
+      </label>
+
+      <label>氏名
+        <input type="text" name="name" required>
+      </label>
+
+      <label>電話番号
+        <input type="tel" name="tel" required>
+      </label>
+
+      <label>メールアドレス
+        <input type="email" name="email">
+      </label>
+
+      <label>備考
+        <textarea name="note" rows="3"></textarea>
+      </label>
+
+      <button type="submit">登録する</button>
+    </form>
+  </body>
+</html>
