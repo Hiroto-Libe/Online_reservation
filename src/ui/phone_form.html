@@ -12,7 +12,7 @@
   </head>
   <body>
     <h1>電話予約</h1>
-    <form method="post">
+    <form method="post" action="<?= ScriptApp.getService().getUrl() ?>" target="_top">
       <input type="hidden" name="reservation_type" value="PHONE">
 
       <label>メニュー
