@@ -23,8 +23,16 @@
         </select>
       </label>
 
-      <label>予約日時
-        <input type="datetime-local" name="start_at" required>
+      <label>予約日
+        <input type="date" name="start_date" required min="<?= minDate ?>" max="<?= maxDate ?>">
+      </label>
+
+      <label>予約時間
+        <select name="start_time" required>
+          <? for (var i = 0; i < timeOptions.length; i++) { ?>
+            <option value="<?= timeOptions[i] ?>"><?= timeOptions[i] ?></option>
+          <? } ?>
+        </select>
       </label>
 
       <label>氏名
@@ -45,5 +53,33 @@
 
       <button type="submit">登録する</button>
     </form>
+    <script>
+      function updateTimeOptions(dateValue) {
+        if (!dateValue) return;
+        google.script.run.withSuccessHandler(function (options) {
+          var select = document.querySelector('select[name="start_time"]');
+          select.innerHTML = '';
+          options.forEach(function (time) {
+            var option = document.createElement('option');
+            option.value = time;
+            option.textContent = time;
+            select.appendChild(option);
+          });
+        }).getTimeOptionsForDate(dateValue);
+      }
+
+      document.addEventListener('DOMContentLoaded', function () {
+        var dateInput = document.querySelector('input[name="start_date"]');
+        if (!dateInput) return;
+        if (!dateInput.value) {
+          var min = dateInput.getAttribute('min');
+          if (min) dateInput.value = min;
+        }
+        updateTimeOptions(dateInput.value);
+        dateInput.addEventListener('change', function () {
+          updateTimeOptions(dateInput.value);
+        });
+      });
+    </script>
   </body>
 </html>

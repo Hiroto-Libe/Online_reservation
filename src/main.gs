@@ -3,6 +3,10 @@ function doGet(e) {
   var templateName = mode === 'phone' ? 'phone_form' : 'web_form';
   var template = HtmlService.createTemplateFromFile(templateName);
   template.menus = getMenus();
+  var dateRange = getReservationDateRange();
+  template.minDate = dateRange.minDate;
+  template.maxDate = dateRange.maxDate;
+  template.timeOptions = getTimeOptionsForDate(dateRange.minDate);
   return template.evaluate().setTitle('Reservation');
 }
 
@@ -17,7 +21,7 @@ function doPost(e) {
     return renderResult_(result.message, true);
   } catch (err) {
     logError('DOPOST_ERROR', err, null);
-    return renderResult_('Reservation failed. Please contact the administrator.', false);
+    return renderResult_('予約に失敗しました。管理者に連絡してください。', false);
   }
 }
 
@@ -32,7 +36,12 @@ function renderResult_(message, ok) {
 }
 
 function normalizeInput_(params) {
-  var startAt = params.start_at ? new Date(params.start_at) : null;
+  var startAt = null;
+  if (params.start_at) {
+    startAt = new Date(params.start_at);
+  } else if (params.start_date && params.start_time) {
+    startAt = new Date(params.start_date + 'T' + params.start_time);
+  }
   return {
     reservation_type: params.reservation_type || 'WEB',
     menu_code: (params.menu_code || '').trim(),

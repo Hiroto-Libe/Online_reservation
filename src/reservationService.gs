@@ -1,4 +1,5 @@
-function createReservation(input) {
+function createReservation(input, options) {
+  options = options || {};
   var lock = lockForReservations();
   var reservationId = null;
   lock.waitLock(20000);
@@ -9,12 +10,12 @@ function createReservation(input) {
     }
 
     if (!checkAvailability(input.start_at)) {
-      return { ok: false, message: 'No available slots for the selected time.' };
+      return { ok: false, message: '指定の日時は空きがありません。' };
     }
 
     var menu = getMenuByCode(input.menu_code);
     if (!menu) {
-      return { ok: false, message: 'Menu not found.' };
+      return { ok: false, message: 'メニューが見つかりません。' };
     }
 
     var startAt = input.start_at;
@@ -43,19 +44,23 @@ function createReservation(input) {
 
     appendReservation(record);
 
-    var eventId = createCalendarEvent(record, menu);
-    updateReservationById(reservationId, {
-      calendar_event_id: eventId,
-      updated_at: new Date()
-    });
+    if (!options.skipCalendar) {
+      var eventId = createCalendarEvent(record, menu);
+      updateReservationById(reservationId, {
+        calendar_event_id: eventId,
+        updated_at: new Date()
+      });
+    }
 
-    sendAdminNotification(record, menu);
-    updateReservationById(reservationId, {
-      mail_sent: true,
-      updated_at: new Date()
-    });
+    if (!options.skipMail) {
+      sendAdminNotification(record, menu);
+      updateReservationById(reservationId, {
+        mail_sent: true,
+        updated_at: new Date()
+      });
+    }
 
-    return { ok: true, message: 'Reservation accepted.' };
+    return { ok: true, message: '予約を受け付けました。' };
   } catch (err) {
     if (reservationId) {
       updateReservationById(reservationId, {
@@ -75,7 +80,7 @@ function createReservation(input) {
 function cancelReservation(reservationId) {
   var reservation = getReservationById(reservationId);
   if (!reservation) {
-    return { ok: false, message: 'Reservation not found.' };
+    return { ok: false, message: '予約が見つかりません。' };
   }
 
   updateReservationById(reservationId, {
@@ -87,5 +92,5 @@ function cancelReservation(reservationId) {
     deleteCalendarEvent(reservation.calendar_event_id);
   }
 
-  return { ok: true, message: 'Reservation canceled.' };
+  return { ok: true, message: '予約をキャンセルしました。' };
 }

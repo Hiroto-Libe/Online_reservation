@@ -108,14 +108,56 @@ function getMenus() {
   var values = sheet.getDataRange().getValues();
   if (values.length < 2) {
     return [
-      { menu_code: 'SHAKEN', menu_label: 'Shaken', duration_minutes: 60, calendar_title_prefix: '[SHAKEN] ' },
-      { menu_code: 'TENKEN', menu_label: 'Tenken', duration_minutes: 30, calendar_title_prefix: '[TENKEN] ' }
+      { menu_code: 'SHAKEN', menu_label: '車検', duration_minutes: 60, calendar_title_prefix: '【車検】' },
+      { menu_code: 'TENKEN', menu_label: '点検', duration_minutes: 30, calendar_title_prefix: '【点検】' }
     ];
   }
   var header = values.shift();
   return values.map(function (row) {
     return rowToObject_(header, row);
   });
+}
+
+function getTimeOptions() {
+  return generateTimeOptions_('09:00', '16:30', 15);
+}
+
+function getTimeOptionsForDate(dateInput) {
+  var sheet = getOrCreateSheet_(SHEET_NAMES.slotTemplates, SLOT_TEMPLATE_COLUMNS);
+  var values = sheet.getDataRange().getValues();
+  if (values.length < 2) {
+    return getTimeOptions();
+  }
+  var dateObj = dateInput instanceof Date ? dateInput : new Date(dateInput);
+  if (isNaN(dateObj.getTime())) {
+    return getTimeOptions();
+  }
+  var tz = getSetting('timezone') || Session.getScriptTimeZone() || 'Asia/Tokyo';
+  var weekday = Number(Utilities.formatDate(dateObj, tz, 'u')) % 7;
+  var header = values.shift();
+  var idx = getColumnIndexMap_(header);
+  var map = {};
+  for (var i = 0; i < values.length; i++) {
+    if (Number(values[i][idx.weekday]) !== weekday) {
+      continue;
+    }
+    var timeValue = values[i][idx.time];
+    if (timeValue) {
+      map[String(timeValue)] = true;
+    }
+  }
+  var times = Object.keys(map).sort();
+  return times.length ? times : getTimeOptions();
+}
+
+function getReservationDateRange() {
+  var tz = getSetting('timezone') || Session.getScriptTimeZone() || 'Asia/Tokyo';
+  var today = new Date();
+  var minDate = Utilities.formatDate(today, tz, 'yyyy-MM-dd');
+  var maxDateObj = new Date(today.getTime());
+  maxDateObj.setMonth(maxDateObj.getMonth() + 1);
+  var maxDate = Utilities.formatDate(maxDateObj, tz, 'yyyy-MM-dd');
+  return { minDate: minDate, maxDate: maxDate };
 }
 
 function getMenuByCode(menuCode) {
@@ -240,4 +282,18 @@ function toDateTimeKey_(value) {
   var tz = getSetting('timezone') || Session.getScriptTimeZone() || 'Asia/Tokyo';
   var date = value instanceof Date ? value : new Date(value);
   return Utilities.formatDate(date, tz, 'yyyy-MM-dd HH:mm');
+}
+
+function generateTimeOptions_(start, end, intervalMinutes) {
+  var results = [];
+  var partsStart = start.split(':');
+  var partsEnd = end.split(':');
+  var startMinutes = Number(partsStart[0]) * 60 + Number(partsStart[1]);
+  var endMinutes = Number(partsEnd[0]) * 60 + Number(partsEnd[1]);
+  for (var minutes = startMinutes; minutes <= endMinutes; minutes += intervalMinutes) {
+    var hour = Math.floor(minutes / 60);
+    var minute = minutes % 60;
+    results.push((hour < 10 ? '0' : '') + hour + ':' + (minute < 10 ? '0' : '') + minute);
+  }
+  return results;
 }
