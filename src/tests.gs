@@ -9,6 +9,8 @@ function runBasicTests() {
     results.push(test_createReservation_basic_());
     results.push(test_capacityLimit_());
     results.push(test_doPost_flow_());
+    results.push(test_slotTemplates_reflection_());
+    results.push(test_adminPage_access_());
     Logger.log(results.join('\n'));
     return results;
   } catch (err) {
@@ -157,6 +159,86 @@ function test_doPost_flow_() {
   var finalCount = countConfirmedReservationsAt(startAt);
   assert_(finalCount === before, 'reservation count should return to before');
   return 'OK: doPost flow';
+}
+
+function test_slotTemplates_reflection_() {
+  var sheet = getOrCreateSheet_(SHEET_NAMES.slotTemplates, SLOT_TEMPLATE_COLUMNS);
+  var original = sheet.getDataRange().getValues();
+  try {
+    sheet.clearContents();
+    sheet.appendRow(SLOT_TEMPLATE_COLUMNS);
+    sheet.appendRow([1, '10:00', 1]);
+    sheet.appendRow([2, '13:30', 1]);
+
+    var mondayKey = getNextDateKeyForWeekday_(1);
+    var tuesdayKey = getNextDateKeyForWeekday_(2);
+    var mondayOptions = getTimeOptionsForDate(mondayKey);
+    var tuesdayOptions = getTimeOptionsForDate(tuesdayKey);
+
+    assert_(mondayOptions.length === 1 && mondayOptions[0] === '10:00', 'monday time options should match');
+    assert_(tuesdayOptions.length === 1 && tuesdayOptions[0] === '13:30', 'tuesday time options should match');
+    return 'OK: slot_templates reflection';
+  } finally {
+    sheet.clearContents();
+    if (original && original.length) {
+      sheet.getRange(1, 1, original.length, original[0].length).setValues(original);
+    } else {
+      ensureHeaderRow_(sheet, SLOT_TEMPLATE_COLUMNS);
+    }
+  }
+}
+
+function test_adminPage_access_() {
+  var settingsSheet = getOrCreateSheet_(SHEET_NAMES.settings, SETTINGS_COLUMNS);
+  var original = settingsSheet.getDataRange().getValues();
+  try {
+    setSettingValue_('admin_emails', getActiveUserEmail_() || 'admin@example.com');
+    var output = doGet({ parameter: { mode: 'admin' } });
+    assert_(output && output.getContent, 'admin doGet should return HtmlOutput');
+    var html = output.getContent();
+    assert_(html.indexOf('管理画面') !== -1, 'admin page should render');
+    return 'OK: admin page access';
+  } finally {
+    restoreSettings_(settingsSheet, original);
+  }
+}
+
+function getNextDateKeyForWeekday_(weekday) {
+  var tz = getSetting('timezone') || Session.getScriptTimeZone() || 'Asia/Tokyo';
+  var today = new Date();
+  var todayKey = Utilities.formatDate(today, tz, 'yyyy-MM-dd');
+  var base = new Date(todayKey + 'T00:00');
+  var todayWeekday = Number(Utilities.formatDate(base, tz, 'u')) % 7;
+  var diff = (weekday - todayWeekday + 7) % 7;
+  base.setDate(base.getDate() + diff);
+  return Utilities.formatDate(base, tz, 'yyyy-MM-dd');
+}
+
+function setSettingValue_(key, value) {
+  var sheet = getOrCreateSheet_(SHEET_NAMES.settings, SETTINGS_COLUMNS);
+  var values = sheet.getDataRange().getValues();
+  if (values.length < 1) {
+    sheet.appendRow(SETTINGS_COLUMNS);
+    values = sheet.getDataRange().getValues();
+  }
+  var header = values[0];
+  var idx = getColumnIndexMap_(header);
+  for (var i = 1; i < values.length; i++) {
+    if (values[i][idx.key] === key) {
+      sheet.getRange(i + 1, idx.value + 1).setValue(value);
+      return;
+    }
+  }
+  sheet.appendRow([key, value]);
+}
+
+function restoreSettings_(sheet, original) {
+  sheet.clearContents();
+  if (original && original.length) {
+    sheet.getRange(1, 1, original.length, original[0].length).setValues(original);
+  } else {
+    ensureHeaderRow_(sheet, SETTINGS_COLUMNS);
+  }
 }
 
 function findLastReservationId_() {

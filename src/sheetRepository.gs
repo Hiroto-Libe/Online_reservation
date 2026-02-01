@@ -80,6 +80,21 @@ function getReservationById(reservationId) {
   return null;
 }
 
+function getRecentReservations(limit) {
+  var sheet = getOrCreateSheet_(SHEET_NAMES.reservations, RESERVATION_COLUMNS);
+  var values = sheet.getDataRange().getValues();
+  if (values.length < 2) {
+    return [];
+  }
+  var header = values[0];
+  var rows = values.slice(1);
+  var start = Math.max(0, rows.length - limit);
+  var slice = rows.slice(start).reverse();
+  return slice.map(function (row) {
+    return rowToObject_(header, row);
+  });
+}
+
 function countConfirmedReservationsAt(startAt) {
   var sheet = getOrCreateSheet_(SHEET_NAMES.reservations, RESERVATION_COLUMNS);
   var values = sheet.getDataRange().getValues();
@@ -128,7 +143,15 @@ function getTimeOptionsForDate(dateInput) {
   if (values.length < 2) {
     return getTimeOptions();
   }
-  var dateObj = dateInput instanceof Date ? dateInput : new Date(dateInput);
+  var dateObj;
+  if (dateInput instanceof Date) {
+    dateObj = dateInput;
+  } else if (typeof dateInput === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
+    var parts = dateInput.split('-');
+    dateObj = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+  } else {
+    dateObj = new Date(dateInput);
+  }
   if (isNaN(dateObj.getTime())) {
     return getTimeOptions();
   }
@@ -141,9 +164,9 @@ function getTimeOptionsForDate(dateInput) {
     if (Number(values[i][idx.weekday]) !== weekday) {
       continue;
     }
-    var timeValue = values[i][idx.time];
+    var timeValue = normalizeTimeValue_(values[i][idx.time]);
     if (timeValue) {
-      map[String(timeValue)] = true;
+      map[timeValue] = true;
     }
   }
   var times = Object.keys(map).sort();
@@ -181,7 +204,8 @@ function findSlotOverride(dateKey, timeKey) {
   for (var i = 0; i < values.length; i++) {
     var row = values[i];
     var rowDate = toDateKey_(row[idx.date]);
-    if (rowDate === dateKey && String(row[idx.time]) === timeKey) {
+    var rowTime = normalizeTimeValue_(row[idx.time]);
+    if (rowDate === dateKey && rowTime === timeKey) {
       return rowToObject_(header, row);
     }
   }
@@ -198,7 +222,8 @@ function findSlotTemplate(weekday, timeKey) {
   var idx = getColumnIndexMap_(header);
   for (var i = 0; i < values.length; i++) {
     var row = values[i];
-    if (Number(row[idx.weekday]) === weekday && String(row[idx.time]) === timeKey) {
+    var rowTime = normalizeTimeValue_(row[idx.time]);
+    if (Number(row[idx.weekday]) === weekday && rowTime === timeKey) {
       return rowToObject_(header, row);
     }
   }
@@ -282,6 +307,21 @@ function toDateTimeKey_(value) {
   var tz = getSetting('timezone') || Session.getScriptTimeZone() || 'Asia/Tokyo';
   var date = value instanceof Date ? value : new Date(value);
   return Utilities.formatDate(date, tz, 'yyyy-MM-dd HH:mm');
+}
+
+function normalizeTimeValue_(value) {
+  if (!value && value !== 0) {
+    return '';
+  }
+  var tz = getSetting('timezone') || Session.getScriptTimeZone() || 'Asia/Tokyo';
+  if (value instanceof Date) {
+    return Utilities.formatDate(value, tz, 'HH:mm');
+  }
+  var str = String(value).trim();
+  if (/^\d{1,2}:\d{2}$/.test(str)) {
+    return str.length === 4 ? '0' + str : str;
+  }
+  return str;
 }
 
 function generateTimeOptions_(start, end, intervalMinutes) {

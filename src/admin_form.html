@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>管理画面</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 24px; }
+      table { border-collapse: collapse; width: 100%; max-width: 960px; }
+      th, td { border: 1px solid #ddd; padding: 8px; font-size: 12px; }
+      th { background: #f5f5f5; }
+      .section { margin-top: 24px; }
+      input { padding: 6px; width: 280px; }
+      button { padding: 6px 12px; }
+    </style>
+  </head>
+  <body>
+    <h1>管理画面</h1>
+    <p>ログインユーザー: <?= adminEmail ?></p>
+
+    <div class="section">
+      <h2>予約キャンセル</h2>
+      <form method="post" action="<?= ScriptApp.getService().getUrl() ?>" target="_top">
+        <input type="hidden" name="action" value="admin_cancel">
+        <label>予約ID:
+          <input type="text" name="reservation_id" required>
+        </label>
+        <button type="submit">キャンセル</button>
+      </form>
+    </div>
+
+    <div class="section">
+      <h2>予約一覧（最新50件）</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>予約ID</th>
+            <th>種別</th>
+            <th>状態</th>
+            <th>メニュー</th>
+            <th>開始</th>
+            <th>終了</th>
+            <th>氏名</th>
+            <th>電話</th>
+          </tr>
+        </thead>
+        <tbody>
+          <? for (var i = 0; i < reservations.length; i++) { ?>
+            <tr>
+              <td><?= reservations[i].reservation_id ?></td>
+              <td><?= reservations[i].reservation_type ?></td>
+              <td><?= reservations[i].status ?></td>
+              <td><?= reservations[i].menu_code ?></td>
+              <td><?= reservations[i].start_at ?></td>
+              <td><?= reservations[i].end_at ?></td>
+              <td><?= reservations[i].name ?></td>
+              <td><?= reservations[i].tel ?></td>
+            </tr>
+          <? } ?>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

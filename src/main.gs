@@ -1,5 +1,14 @@
 function doGet(e) {
   var mode = (e && e.parameter && e.parameter.mode) || 'web';
+  if (mode === 'admin') {
+    if (!isAdminUser_()) {
+      return HtmlService.createHtmlOutput('<h2>権限がありません。</h2>');
+    }
+    var adminTemplate = HtmlService.createTemplateFromFile('admin_form');
+    adminTemplate.reservations = getRecentReservations(50);
+    adminTemplate.adminEmail = getActiveUserEmail_();
+    return adminTemplate.evaluate().setTitle('管理画面');
+  }
   var templateName = mode === 'phone' ? 'phone_form' : 'web_form';
   var template = HtmlService.createTemplateFromFile(templateName);
   template.menus = getMenus();
@@ -13,6 +22,9 @@ function doGet(e) {
 function doPost(e) {
   try {
     var params = (e && e.parameter) ? e.parameter : {};
+    if (params.action === 'admin_cancel') {
+      return handleAdminCancel_(params);
+    }
     var input = normalizeInput_(params);
     var result = createReservation(input);
     if (!result.ok) {
@@ -51,4 +63,39 @@ function normalizeInput_(params) {
     email: (params.email || '').trim(),
     note: (params.note || '').trim()
   };
+}
+
+function handleAdminCancel_(params) {
+  if (!isAdminUser_()) {
+    return HtmlService.createHtmlOutput('<h2>権限がありません。</h2>');
+  }
+  var reservationId = (params.reservation_id || '').trim();
+  if (!reservationId) {
+    return renderResult_('予約IDを入力してください。', false);
+  }
+  var result = cancelReservation(reservationId);
+  return renderResult_(result.message, result.ok);
+}
+
+function getActiveUserEmail_() {
+  var email = Session.getActiveUser().getEmail();
+  if (!email) {
+    email = Session.getEffectiveUser().getEmail();
+  }
+  return email || '';
+}
+
+function isAdminUser_() {
+  var email = getActiveUserEmail_();
+  if (!email) {
+    return false;
+  }
+  var allowList = getSetting('admin_emails');
+  if (!allowList) {
+    return false;
+  }
+  var allowed = allowList.split(',').map(function (item) {
+    return String(item).trim().toLowerCase();
+  }).filter(Boolean);
+  return allowed.indexOf(email.toLowerCase()) !== -1;
 }
