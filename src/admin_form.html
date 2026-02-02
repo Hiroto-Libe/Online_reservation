@@ -41,6 +41,7 @@
             <th>終了</th>
             <th>氏名</th>
             <th>電話</th>
+            <th>操作</th>
           </tr>
         </thead>
         <tbody>
@@ -54,6 +55,15 @@
               <td><?= reservations[i].end_at ?></td>
               <td><?= reservations[i].name ?></td>
               <td><?= reservations[i].tel ?></td>
+              <td>
+                <? if (reservations[i].status === 'CONFIRMED') { ?>
+                  <form method="post" action="<?= ScriptApp.getService().getUrl() ?>" target="_top" style="margin:0;">
+                    <input type="hidden" name="action" value="admin_cancel">
+                    <input type="hidden" name="reservation_id" value="<?= reservations[i].reservation_id ?>">
+                    <button type="submit">キャンセル</button>
+                  </form>
+                <? } ?>
+              </td>
             </tr>
           <? } ?>
         </tbody>

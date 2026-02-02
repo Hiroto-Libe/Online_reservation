@@ -11,6 +11,9 @@ function runBasicTests() {
     results.push(test_doPost_flow_());
     results.push(test_slotTemplates_reflection_());
     results.push(test_adminPage_access_());
+    results.push(test_adminCancel_action_());
+    results.push(test_settings_required_());
+    results.push(test_settings_actual_());
     Logger.log(results.join('\n'));
     return results;
   } catch (err) {
@@ -203,6 +206,71 @@ function test_adminPage_access_() {
   }
 }
 
+function test_adminCancel_action_() {
+  var settingsSheet = getOrCreateSheet_(SHEET_NAMES.settings, SETTINGS_COLUMNS);
+  var original = settingsSheet.getDataRange().getValues();
+  try {
+    setSettingValue_('admin_emails', getActiveUserEmail_() || 'admin@example.com');
+    var startAt = findAvailableStart_();
+    var input = {
+      reservation_type: 'WEB',
+      menu_code: 'SHAKEN',
+      start_at: startAt,
+      name: 'テスト太郎',
+      tel: '000-0000-0000',
+      email: '',
+      note: 'admin-cancel-test'
+    };
+    var created = createReservation(input, { skipCalendar: true, skipMail: true });
+    assert_(created.ok, 'createReservation should succeed');
+    var reservationId = findLastReservationId_();
+    assert_(reservationId, 'reservation_id should exist');
+    var output = doPost({ parameter: { action: 'admin_cancel', reservation_id: reservationId } });
+    assert_(output && output.getContent, 'admin cancel should return HtmlOutput');
+    var canceled = getReservationById(reservationId);
+    assert_(canceled && canceled.status === 'CANCELED', 'reservation should be canceled');
+    return 'OK: admin cancel action';
+  } finally {
+    restoreSettings_(settingsSheet, original);
+  }
+}
+
+function test_settings_required_() {
+  var settingsSheet = getOrCreateSheet_(SHEET_NAMES.settings, SETTINGS_COLUMNS);
+  var original = settingsSheet.getDataRange().getValues();
+  try {
+    setSettingValue_('admin_emails', 'admin@example.com');
+    setSettingValue_('notify_mail_to', 'notify@example.com');
+    setSettingValue_('calendar_id', 'example@group.calendar.google.com');
+
+    var adminEmails = getSetting('admin_emails');
+    var notifyMail = getSetting('notify_mail_to');
+    var calendarId = getSetting('calendar_id');
+
+    assert_(!!adminEmails, 'admin_emails should be set');
+    assert_(!!notifyMail, 'notify_mail_to should be set');
+    assert_(!!calendarId, 'calendar_id should be set');
+    assert_(/@/.test(notifyMail), 'notify_mail_to should look like email');
+    assert_(/@/.test(calendarId), 'calendar_id should look like email');
+    return 'OK: settings required';
+  } finally {
+    restoreSettings_(settingsSheet, original);
+  }
+}
+
+function test_settings_actual_() {
+  var adminEmails = getSetting('admin_emails');
+  var notifyMail = getSetting('notify_mail_to');
+  var calendarId = getSetting('calendar_id');
+
+  assert_(!!adminEmails, 'admin_emails should be set (actual)');
+  assert_(!!notifyMail, 'notify_mail_to should be set (actual)');
+  assert_(!!calendarId, 'calendar_id should be set (actual)');
+  assert_(/@/.test(notifyMail), 'notify_mail_to should look like email (actual)');
+  assert_(/@/.test(calendarId), 'calendar_id should look like email (actual)');
+  return 'OK: settings actual';
+}
+
 function getNextDateKeyForWeekday_(weekday) {
   var tz = getSetting('timezone') || Session.getScriptTimeZone() || 'Asia/Tokyo';
   var today = new Date();
@@ -280,4 +348,31 @@ function assert_(condition, message) {
   if (!condition) {
     throw new Error('ASSERT: ' + message);
   }
+}
+
+function cleanupTestReservations() {
+  var sheet = getOrCreateSheet_(SHEET_NAMES.reservations, RESERVATION_COLUMNS);
+  var values = sheet.getDataRange().getValues();
+  if (values.length < 2) {
+    return 0;
+  }
+  var header = values[0];
+  var idx = getColumnIndexMap_(header);
+  var testNotes = {
+    'test': true,
+    'doPost-test': true,
+    'capacity-test': true,
+    'admin-cancel-test': true
+  };
+  var removed = 0;
+  for (var i = values.length - 1; i >= 1; i--) {
+    var row = values[i];
+    var note = String(row[idx.note] || '').trim();
+    var status = String(row[idx.status] || '').trim();
+    if (testNotes[note] || status === 'CANCELED' || status === 'ERROR') {
+      sheet.deleteRow(i + 1);
+      removed++;
+    }
+  }
+  return removed;
 }
