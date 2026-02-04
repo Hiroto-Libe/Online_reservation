@@ -3,71 +3,224 @@
   <head>
     <meta charset="utf-8">
     <title>管理画面</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&display=swap">
     <style>
-      body { font-family: Arial, sans-serif; margin: 24px; }
-      table { border-collapse: collapse; width: 100%; max-width: 960px; }
-      th, td { border: 1px solid #ddd; padding: 8px; font-size: 12px; }
-      th { background: #f5f5f5; }
-      .section { margin-top: 24px; }
-      input { padding: 6px; width: 280px; }
-      button { padding: 6px 12px; }
+      :root {
+        --bg: #f4f6f8;
+        --ink: #1d242b;
+        --muted: #6a7280;
+        --card: #ffffff;
+        --accent: #0f6b6d;
+        --accent-weak: #d7f0ea;
+        --border: #e5e7eb;
+        --shadow: 0 18px 40px rgba(0, 0, 0, 0.12);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Noto Sans JP", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(1200px 500px at 20% -10%, #e6f3ff 0%, rgba(230, 243, 255, 0) 60%),
+          radial-gradient(900px 400px at 90% -20%, #fef4d7 0%, rgba(254, 244, 215, 0) 55%),
+          var(--bg);
+      }
+      .page {
+        min-height: 100vh;
+        padding: 40px 20px 64px;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+      }
+      .card {
+        width: min(1100px, 100%);
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+        animation: rise 420ms ease-out;
+      }
+      header {
+        padding: 28px 28px 20px;
+        border-bottom: 1px solid var(--border);
+        background: linear-gradient(120deg, #f3fbf8 0%, #ffffff 60%);
+      }
+      header h1 {
+        margin: 0 0 6px;
+        font-size: 26px;
+        letter-spacing: 0.02em;
+      }
+      header p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .content {
+        padding: 24px 28px 28px;
+        display: grid;
+        gap: 24px;
+      }
+      .section {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 18px 18px 16px;
+        background: #fff;
+      }
+      .section h2 {
+        margin: 0 0 12px;
+        font-size: 16px;
+      }
+      .field {
+        display: grid;
+        gap: 8px;
+      }
+      .field label {
+        font-weight: 600;
+        font-size: 13px;
+      }
+      input {
+        width: 100%;
+        max-width: 320px;
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        font-size: 14px;
+        transition: border 120ms ease, box-shadow 120ms ease;
+        background: #fff;
+      }
+      input:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(15, 107, 109, 0.15);
+      }
+      button {
+        border: none;
+        background: var(--accent);
+        color: #fff;
+        font-weight: 600;
+        padding: 10px 16px;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: transform 120ms ease, box-shadow 120ms ease;
+      }
+      button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 24px rgba(15, 107, 109, 0.25);
+      }
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: var(--accent-weak);
+        color: var(--accent);
+        font-weight: 600;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+      th, td {
+        border-bottom: 1px solid var(--border);
+        padding: 10px 8px;
+        text-align: left;
+        vertical-align: top;
+      }
+      th {
+        font-size: 11px;
+        color: var(--muted);
+        font-weight: 600;
+        background: #f8fafb;
+      }
+      .table-wrap {
+        overflow: auto;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+      }
+      .actions-inline {
+        display: flex;
+        gap: 8px;
+      }
+      @keyframes rise {
+        from { transform: translateY(10px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
     </style>
   </head>
   <body>
-    <h1>管理画面</h1>
-    <p>ログインユーザー: <?= adminEmail ?></p>
+    <div class="page">
+      <div class="card">
+        <header>
+          <span class="tag">管理画面</span>
+          <h1>予約管理</h1>
+          <p>ログインユーザー: <?= adminEmail ?></p>
+        </header>
 
-    <div class="section">
-      <h2>予約キャンセル</h2>
-      <form method="post" action="<?= ScriptApp.getService().getUrl() ?>" target="_top">
-        <input type="hidden" name="action" value="admin_cancel">
-        <label>予約ID:
-          <input type="text" name="reservation_id" required>
-        </label>
-        <button type="submit">キャンセル</button>
-      </form>
-    </div>
+        <div class="content">
+          <div class="section">
+            <h2>予約キャンセル</h2>
+            <form method="post" action="<?= ScriptApp.getService().getUrl() ?>" target="_top">
+              <input type="hidden" name="action" value="admin_cancel">
+              <div class="field">
+                <label for="reservation_id">予約ID</label>
+                <input id="reservation_id" type="text" name="reservation_id" required>
+              </div>
+              <div class="actions-inline" style="margin-top:12px;">
+                <button type="submit">キャンセル</button>
+              </div>
+            </form>
+          </div>
 
-    <div class="section">
-      <h2>予約一覧（最新50件）</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>予約ID</th>
-            <th>種別</th>
-            <th>状態</th>
-            <th>メニュー</th>
-            <th>開始</th>
-            <th>終了</th>
-            <th>氏名</th>
-            <th>電話</th>
-            <th>操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <? for (var i = 0; i < reservations.length; i++) { ?>
-            <tr>
-              <td><?= reservations[i].reservation_id ?></td>
-              <td><?= reservations[i].reservation_type ?></td>
-              <td><?= reservations[i].status ?></td>
-              <td><?= reservations[i].menu_code ?></td>
-              <td><?= reservations[i].start_at ?></td>
-              <td><?= reservations[i].end_at ?></td>
-              <td><?= reservations[i].name ?></td>
-              <td><?= reservations[i].tel ?></td>
-              <td>
-                <? if (reservations[i].status === 'CONFIRMED') { ?>
-                  <form method="post" action="<?= ScriptApp.getService().getUrl() ?>" target="_top" style="margin:0;">
-                    <input type="hidden" name="action" value="admin_cancel">
-                    <input type="hidden" name="reservation_id" value="<?= reservations[i].reservation_id ?>">
-                    <button type="submit">キャンセル</button>
-                  </form>
-                <? } ?>
-              </td>
-            </tr>
-          <? } ?>
-        </tbody>
-      </table>
+          <div class="section">
+            <h2>予約一覧（最新50件）</h2>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>予約ID</th>
+                    <th>種別</th>
+                    <th>状態</th>
+                    <th>メニュー</th>
+                    <th>開始</th>
+                    <th>終了</th>
+                    <th>氏名</th>
+                    <th>電話</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <? for (var i = 0; i < reservations.length; i++) { ?>
+                    <tr>
+                      <td><?= reservations[i].reservation_id ?></td>
+                      <td><?= reservations[i].reservation_type ?></td>
+                      <td><?= reservations[i].status ?></td>
+                      <td><?= reservations[i].menu_code ?></td>
+                      <td><?= reservations[i].start_at ?></td>
+                      <td><?= reservations[i].end_at ?></td>
+                      <td><?= reservations[i].name ?></td>
+                      <td><?= reservations[i].tel ?></td>
+                      <td>
+                        <? if (reservations[i].status === 'CONFIRMED') { ?>
+                          <form method="post" action="<?= ScriptApp.getService().getUrl() ?>" target="_top" style="margin:0;">
+                            <input type="hidden" name="action" value="admin_cancel">
+                            <input type="hidden" name="reservation_id" value="<?= reservations[i].reservation_id ?>">
+                            <button type="submit">キャンセル</button>
+                          </form>
+                        <? } ?>
+                      </td>
+                    </tr>
+                  <? } ?>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </body>
 </html>

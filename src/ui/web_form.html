@@ -3,56 +3,200 @@
   <head>
     <meta charset="utf-8">
     <title>Web予約</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&display=swap">
     <style>
-      body { font-family: Arial, sans-serif; margin: 24px; }
-      label { display: block; margin-top: 12px; }
-      input, select, textarea { width: 100%; max-width: 420px; padding: 8px; }
-      button { margin-top: 16px; padding: 10px 16px; }
+      :root {
+        --bg: #f4f6f8;
+        --ink: #1d242b;
+        --muted: #6a7280;
+        --card: #ffffff;
+        --accent: #0f6b6d;
+        --accent-weak: #d7f0ea;
+        --border: #e5e7eb;
+        --shadow: 0 18px 40px rgba(0, 0, 0, 0.12);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Noto Sans JP", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(1200px 500px at 20% -10%, #e6f3ff 0%, rgba(230, 243, 255, 0) 60%),
+          radial-gradient(900px 400px at 90% -20%, #fef4d7 0%, rgba(254, 244, 215, 0) 55%),
+          var(--bg);
+      }
+      .page {
+        min-height: 100vh;
+        padding: 40px 20px 64px;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+      }
+      .card {
+        width: min(720px, 100%);
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+        animation: rise 420ms ease-out;
+      }
+      header {
+        padding: 28px 28px 20px;
+        border-bottom: 1px solid var(--border);
+        background: linear-gradient(120deg, #f3fbf8 0%, #ffffff 60%);
+      }
+      header h1 {
+        margin: 0 0 6px;
+        font-size: 26px;
+        letter-spacing: 0.02em;
+      }
+      header p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+      form {
+        padding: 24px 28px 28px;
+        display: grid;
+        gap: 18px;
+      }
+      .field {
+        display: grid;
+        gap: 8px;
+      }
+      .field label {
+        font-weight: 600;
+        font-size: 14px;
+      }
+      input, select, textarea {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        font-size: 15px;
+        transition: border 120ms ease, box-shadow 120ms ease;
+        background: #fff;
+      }
+      input:focus, select:focus, textarea:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(15, 107, 109, 0.15);
+      }
+      .grid-2 {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      }
+      .hint {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        margin-top: 6px;
+      }
+      button {
+        border: none;
+        background: var(--accent);
+        color: #fff;
+        font-weight: 600;
+        padding: 12px 20px;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: transform 120ms ease, box-shadow 120ms ease;
+      }
+      button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 24px rgba(15, 107, 109, 0.25);
+      }
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: var(--accent-weak);
+        color: var(--accent);
+        font-weight: 600;
+      }
+      @keyframes rise {
+        from { transform: translateY(10px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
     </style>
   </head>
   <body>
-    <h1>Web予約</h1>
-    <form method="post" action="<?= ScriptApp.getService().getUrl() ?>" target="_top">
-      <input type="hidden" name="reservation_type" value="WEB">
+    <div class="page">
+      <div class="card">
+        <header>
+          <span class="tag">Web予約フォーム</span>
+          <h1>ご予約の入力</h1>
+          <p>必要事項をご入力ください。予約時間は受付可能枠のみ表示されます。</p>
+        </header>
+        <form method="post" action="<?= ScriptApp.getService().getUrl() ?>" target="_top">
+          <input type="hidden" name="reservation_type" value="WEB">
 
-      <label>メニュー
-        <select name="menu_code" required>
-          <? for (var i = 0; i < menus.length; i++) { ?>
-            <option value="<?= menus[i].menu_code ?>"><?= menus[i].menu_label ?></option>
-          <? } ?>
-        </select>
-      </label>
+          <div class="field">
+            <label for="menu_code">メニュー</label>
+            <select id="menu_code" name="menu_code" required>
+              <? for (var i = 0; i < menus.length; i++) { ?>
+                <option value="<?= menus[i].menu_code ?>"><?= menus[i].menu_label ?></option>
+              <? } ?>
+            </select>
+          </div>
 
-      <label>予約日
-        <input type="date" name="start_date" required min="<?= minDate ?>" max="<?= maxDate ?>">
-      </label>
+          <div class="grid-2">
+            <div class="field">
+              <label for="start_date">予約日</label>
+              <input id="start_date" type="date" name="start_date" required min="<?= minDate ?>" max="<?= maxDate ?>">
+              <span class="hint">本日から1ヶ月以内</span>
+            </div>
+            <div class="field">
+              <label for="start_time">予約時間</label>
+              <select id="start_time" name="start_time" required>
+                <? for (var i = 0; i < timeOptions.length; i++) { ?>
+                  <option value="<?= timeOptions[i] ?>"><?= timeOptions[i] ?></option>
+                <? } ?>
+              </select>
+              <span class="hint">15分刻み / 最終受付16:30</span>
+            </div>
+          </div>
 
-      <label>予約時間
-        <select name="start_time" required>
-          <? for (var i = 0; i < timeOptions.length; i++) { ?>
-            <option value="<?= timeOptions[i] ?>"><?= timeOptions[i] ?></option>
-          <? } ?>
-        </select>
-      </label>
+          <div class="grid-2">
+            <div class="field">
+              <label for="name">氏名</label>
+              <input id="name" type="text" name="name" required>
+            </div>
+            <div class="field">
+              <label for="tel">電話番号</label>
+              <input id="tel" type="tel" name="tel" required>
+            </div>
+          </div>
 
-      <label>氏名
-        <input type="text" name="name" required>
-      </label>
+          <div class="grid-2">
+            <div class="field">
+              <label for="email">メールアドレス</label>
+              <input id="email" type="email" name="email">
+              <span class="hint">任意</span>
+            </div>
+          </div>
 
-      <label>電話番号
-        <input type="tel" name="tel" required>
-      </label>
+          <div class="field">
+            <label for="note">備考</label>
+            <textarea id="note" name="note" rows="3"></textarea>
+          </div>
 
-      <label>メールアドレス
-        <input type="email" name="email">
-      </label>
-
-      <label>備考
-        <textarea name="note" rows="3"></textarea>
-      </label>
-
-      <button type="submit">予約する</button>
-    </form>
+          <div class="actions">
+            <button type="submit">予約する</button>
+          </div>
+        </form>
+      </div>
+    </div>
     <script>
       function updateTimeOptions(dateValue) {
         if (!dateValue) return;
