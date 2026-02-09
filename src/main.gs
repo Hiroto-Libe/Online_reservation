@@ -22,27 +22,35 @@ function doGet(e) {
 function doPost(e) {
   try {
     var params = (e && e.parameter) ? e.parameter : {};
+    var baseUrl = ScriptApp.getService().getUrl();
+    var redirectMode = (params.reservation_type || '').toUpperCase() === 'PHONE' ? 'phone' : 'web';
+    var redirectUrl = baseUrl + '?mode=' + redirectMode;
     if (params.action === 'admin_cancel') {
-      return handleAdminCancel_(params);
+      return handleAdminCancel_(params, baseUrl + '?mode=admin');
     }
     var input = normalizeInput_(params);
     var result = createReservation(input);
     if (!result.ok) {
-      return renderResult_(result.message, false);
+      return renderResult_(result.message, false, redirectUrl);
     }
-    return renderResult_(result.message, true);
+    return renderResult_(result.message, true, redirectUrl);
   } catch (err) {
     logError('DOPOST_ERROR', err, null);
-    return renderResult_('予約に失敗しました。管理者に連絡してください。', false);
+    return renderResult_('予約に失敗しました。管理者に連絡してください。', false, ScriptApp.getService().getUrl());
   }
 }
 
-function renderResult_(message, ok) {
+function renderResult_(message, ok, redirectUrl) {
   var color = ok ? '#2b7a0b' : '#b00020';
+  var safeUrl = redirectUrl || ScriptApp.getService().getUrl();
   var html = '<!doctype html><html><head><meta charset="utf-8">' +
-    '<title>Result</title></head><body style="font-family:Arial, sans-serif;">' +
+    '<title>Result</title>' +
+    '<meta name="viewport" content="width=device-width, initial-scale=1">' +
+    '<meta http-equiv="refresh" content="1; url=' + safeUrl + '">' +
+    '</head><body style="font-family:Arial, sans-serif; padding:24px;">' +
     '<h2 style="color:' + color + ';">' + message + '</h2>' +
-    '<p><a href="' + ScriptApp.getService().getUrl() + '">Back</a></p>' +
+    '<p><a href="' + safeUrl + '">元の画面へ戻る</a></p>' +
+    '<script>setTimeout(function(){window.location.replace("' + safeUrl + '");}, 800);</script>' +
     '</body></html>';
   return HtmlService.createHtmlOutput(html);
 }
@@ -65,16 +73,16 @@ function normalizeInput_(params) {
   };
 }
 
-function handleAdminCancel_(params) {
+function handleAdminCancel_(params, redirectUrl) {
   if (!isAdminUser_()) {
     return HtmlService.createHtmlOutput('<h2>権限がありません。</h2>');
   }
   var reservationId = (params.reservation_id || '').trim();
   if (!reservationId) {
-    return renderResult_('予約IDを入力してください。', false);
+    return renderResult_('予約IDを入力してください。', false, redirectUrl);
   }
   var result = cancelReservation(reservationId);
-  return renderResult_(result.message, result.ok);
+  return renderResult_(result.message, result.ok, redirectUrl);
 }
 
 function getActiveUserEmail_() {
